@@ -42,3 +42,19 @@ Learned how to serialize and deserialize objects in C# using System.Text.Json.
 Understood how to separate storage logic into a helper class (GarageStorage) instead of putting everything in Program.cs.
 
 Gained insight into the importance of validation and error handling when working with files.
+--------------------------------------------------------------------------------
+## 23-10-2025
+
+Work done:
+- Integrated ConfigService and AppConfiguration (config.json now auto-creates and loads).
+- Implemented auto-save feature after parking, removing, moving, and checking out vehicles.
+- Added CheckoutVehicle() method with pricing logic using free minutes and hourly rates.
+- Added MoveVehicle() method to move vehicles between spots.
+- Verified GarageStorage saves/loads correctly and data persists after restart.
+
+Reasoning / Learning:
+- Learned how to serialize and deserialize data to JSON for persistent storage.
+- Understood how to separate configuration and runtime data using different classes.
+- Improved understanding of method reusability (Garage.TryParkOnSpot used by MoveVehicle).
+- Gained experience applying encapsulation and clean object interactions.
+------------------------------------------------------------------------------
