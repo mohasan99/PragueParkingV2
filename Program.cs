@@ -1,4 +1,5 @@
 ﻿using System;
+using Spectre.Console;
 
 namespace PragueParkingV2;
 
@@ -8,200 +9,223 @@ class Program
     {
         // Load configuration and garage (spots + any previously saved vehicles)
         var configuration = ConfigService.Load();
-        var garage = GarageStorage.Load(configuration.SpotCount, configuration.SpotCapacity); 
+        var garage = GarageStorage.Load(configuration.SpotCount, configuration.SpotCapacity);
 
-        while (true)
+        while (true) // main loop
         {
-            Console.Clear();
-            Console.WriteLine(" PRAGUE PARKING 2.0 ");
-            Console.WriteLine("1. Park vehicle");
-            Console.WriteLine("2. Remove vehicle");
-            Console.WriteLine("3. Show all spots");
-            Console.WriteLine("4. Checkout (with price)");
-            Console.WriteLine("5. Move vehicle");
-            Console.WriteLine("6. Save & Exit");
-            Console.Write("Choose option: ");
-            var choice = Console.ReadLine() ?? "";
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new Rule("[yellow]PRAGUE PARKING 2.0[/]").Centered());
 
-            if (choice == "1") ParkVehicle(garage);                             
-            else if (choice == "2") RemoveVehicle(garage);                      
-            else if (choice == "3") { garage.ShowAllSpots(); Pause(); }
-            else if (choice == "4") { CheckoutVehicle(garage, configuration); }           
-            else if (choice == "5") { MoveVehicle(garage); }                    
-            else if (choice == "6") { GarageStorage.Save(garage); return; }
-            else { Console.WriteLine("Invalid choice."); Pause(); }
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold]Choose an option[/]:")
+                    .AddChoices(
+                        "1) Park vehicle",
+                        "2) Remove vehicle",
+                        "3) Show all spots",
+                        "4) Checkout (with price)",
+                        "5) Move vehicle",
+                        "6) Save & Exit"
+                    ));
+
+            switch (choice[..1]) // read only the first number
+            {
+                case "1": ParkVehicle(garage); break;
+                case "2": RemoveVehicle(garage); break;
+                case "3": ShowAllSpots(garage); Pause(); break;
+                case "4": CheckoutVehicle(garage, configuration); break;
+                case "5": MoveVehicle(garage); break;
+                case "6":
+                    AnsiConsole.Status().Start("Saving...", _ => GarageStorage.Save(garage));
+                    return;
+            }
         }
     }
+    
+    static string AskForPlate(string question) 
+        => AnsiConsole.Prompt(new TextPrompt<string>(question)
+            .PromptStyle("cyan")
+            .Validate(input =>
+                string.IsNullOrWhiteSpace(input)
+                    ? ValidationResult.Error("[red]Enter a valid registration number[/]")
+                    : ValidationResult.Success()));
+   
+    static string AskForType()
+        => AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose vehicle type:")
+                .AddChoices("car", "mc"));
 
-    //  Autosave after each change is implemented inside these helpers ===
+    static int AskForSpotNumber()
+        => AnsiConsole.Prompt(
+            new TextPrompt<int>("Enter target spot number:")
+                .PromptStyle("cyan")
+                .Validate(number =>
+                    number <= 0
+                        ? ValidationResult.Error("[red]Spot number must be greater than 0[/]")
+                        : ValidationResult.Success()));
 
+    static void Pause()
+    {
+        AnsiConsole.Prompt(new TextPrompt<string>("[grey]Press ENTER to continue[/]").AllowEmpty());
+    }
     static void ParkVehicle(Garage garage)
     {
-        Console.Write("Type (car/mc): ");
-        var type = (Console.ReadLine() ?? "").Trim().ToLower();
+        string vehicleType = AskForType();
+        string registrationNumber = AskForPlate("Enter registration number:");
 
-        if (type != "car" && type != "mc")
-        {
-            Console.WriteLine("Please type 'car' or 'mc'.");
-            Pause();
-            return;
-        }
-
-        Console.Write("Registration number: ");
-        var registrationNumber = Console.ReadLine() ?? "";
-
-        Vehicle vehicle = (type == "car") ? new Car(registrationNumber) : new Motorcycle(registrationNumber);
+        Vehicle vehicle = (vehicleType == "car")
+            ? new Car(registrationNumber)
+            : new Motorcycle(registrationNumber);
 
         if (garage.TryPark(vehicle))
         {
-            Console.WriteLine($"{vehicle.VehicleType} {vehicle.RegistrationNumber} parked!");
-            GarageStorage.Save(garage); // autosave on change
+            AnsiConsole.MarkupLine($"[green]{vehicle.VehicleType} {vehicle.RegistrationNumber} parked![/]");
+            GarageStorage.Save(garage); // autosave after change
         }
         else
         {
-            Console.WriteLine("No space available.");
+            AnsiConsole.MarkupLine("[red]No space available.[/]");
         }
-
         Pause();
     }
-
     static void RemoveVehicle(Garage garage)
     {
-        Console.Write("Registration number to remove: ");
-        var registrationNumber = Console.ReadLine() ?? "";
+        string registrationNumber = AskForPlate("Enter registration number to remove:");
 
         if (garage.Remove(registrationNumber))
         {
-            Console.WriteLine($"{registrationNumber} removed.");
-            GarageStorage.Save(garage); // autosave on change
+            AnsiConsole.MarkupLine($"[yellow]{registrationNumber} removed.[/]");
+            GarageStorage.Save(garage); // autosave after change
         }
         else
         {
-            Console.WriteLine("Vehicle not found.");
+            AnsiConsole.MarkupLine("[red]Vehicle not found.[/]");
         }
-
         Pause();
     }
-
-    // Checkout with price (uses config values) ===
-
     static void CheckoutVehicle(Garage garage, AppConfiguration configuration)
     {
-        Console.Write("Registration to checkout: ");
-        var plate = (Console.ReadLine() ?? "").Trim().ToUpperInvariant();
+        string registrationNumber = AskForPlate("Enter registration number to checkout:").Trim().ToUpperInvariant();
 
-        // Find the vehicle and which spot it's in
-        Vehicle? found = null;
+        Vehicle? foundVehicle = null;
         int spotIndex = -1;
 
         for (int i = 0; i < garage.Spots.Length; i++)
         {
             foreach (var vehicle in garage.Spots[i].Vehicles)
             {
-                if (vehicle.RegistrationNumber == plate)
+                if (vehicle.RegistrationNumber == registrationNumber)
                 {
-                    found = vehicle;
+                    foundVehicle = vehicle;
                     spotIndex = i;
                     break;
                 }
             }
-            if (found != null) break;
+            if (foundVehicle != null) break;
         }
 
-        if (found == null)
+        if (foundVehicle == null)
         {
-            Console.WriteLine("Vehicle not found.");
+            AnsiConsole.MarkupLine("[red]Vehicle not found.[/]");
             Pause();
             return;
         }
 
         var now = DateTimeOffset.Now;
-        var parked = now - found.CheckInTime;
+        var parkedDuration = now - foundVehicle.CheckInTime;
 
-        // Free minutes
         double fee = 0;
-        if (parked.TotalMinutes > configuration.FreeMinutes)
+        if (parkedDuration.TotalMinutes > configuration.FreeMinutes)
         {
-            // bill by started hour
-            var hours = Math.Ceiling(parked.TotalHours);
-            var rate = (found.VehicleType.ToLower() == "car")
+            var hours = Math.Ceiling(parkedDuration.TotalHours);
+            var rate = foundVehicle.VehicleType.Equals("car", StringComparison.OrdinalIgnoreCase)
                 ? configuration.PricePerHourCar
                 : configuration.PricePerHourMotorcycle;
+
             fee = hours * rate;
         }
 
-        Console.WriteLine($"Parked since: {found.CheckInTime:yyyy-MM-dd HH:mm}");
-        Console.WriteLine($"Now:          {now:yyyy-MM-dd HH:mm}");
-        Console.WriteLine($"Duration:     {parked.TotalMinutes:F0} minutes");
-        Console.WriteLine($"Fee:          {fee:0.##} CZK");
-
-        // Remove and autosave
-        if (garage.Remove(plate))
+        var panel = new Panel(
+            $"[white]Parked since:[/] {foundVehicle.CheckInTime:yyyy-MM-dd HH:mm}\n" +
+            $"[white]Now:[/] {now:yyyy-MM-dd HH:mm}\n" +
+            $"[white]Duration:[/] {parkedDuration.TotalMinutes:F0} minutes\n" +
+            $"[white]Fee:[/] [bold]{fee:0.##} CZK[/]")
         {
-            Console.WriteLine("Checked out.");
-            GarageStorage.Save(garage); // autosave on change
+            Header = new PanelHeader($"Checkout — {foundVehicle.VehicleType} {foundVehicle.RegistrationNumber}", Justify.Center)
+        };
+
+        AnsiConsole.Write(panel);
+
+        if (garage.Remove(registrationNumber))
+        {
+            AnsiConsole.MarkupLine("[green]Checked out and removed successfully.[/]");
+            GarageStorage.Save(garage);
         }
         else
         {
-            Console.WriteLine("Unexpected: could not remove after pricing.");
+            AnsiConsole.MarkupLine("[red]Unexpected error: could not remove vehicle after checkout.[/]");
         }
 
         Pause();
     }
-
-    //  Move vehicle to a specific spot ===
-    // Uses Garage.TryParkOnSpot to place on the target.
     static void MoveVehicle(Garage garage)
     {
-        Console.Write("Plate to move: ");
-        var plate = (Console.ReadLine() ?? "").Trim().ToUpperInvariant();
+        string registrationNumber = AskForPlate("Enter registration number to move:").Trim().ToUpperInvariant();
 
-        // Find the vehicle and its current spot
-        Vehicle? found = null;
-        int fromIndex = -1;
+        Vehicle? foundVehicle = null;
+        int originalSpotIndex = -1;
 
         for (int i = 0; i < garage.Spots.Length; i++)
         {
             foreach (var vehicle in garage.Spots[i].Vehicles)
             {
-                if (vehicle.RegistrationNumber == plate)
+                if (vehicle.RegistrationNumber == registrationNumber)
                 {
-                    found = vehicle;
-                    fromIndex = i;
+                    foundVehicle = vehicle;
+                    originalSpotIndex = i;
                     break;
                 }
             }
-            if (found != null) break;
+            if (foundVehicle != null) break;
         }
 
-        if (found == null)
+        if (foundVehicle == null)
         {
-            Console.WriteLine("Vehicle not found.");
+            AnsiConsole.MarkupLine("[red]Vehicle not found.[/]");
             Pause();
             return;
         }
 
-        Console.Write("Target spot number: ");
-        var text = Console.ReadLine() ?? "1";
-        if (!int.TryParse(text, out int targetSpot)) targetSpot = 1;
+        int targetSpot = AskForSpotNumber();
 
-        // Try to park on target spot first (so we don't lose the vehicle if it doesn't fit)
-        if (!garage.TryParkOnSpot(found, targetSpot))
+        if (!garage.TryParkOnSpot(foundVehicle, targetSpot))
         {
-            Console.WriteLine("Could not move: target spot has not enough space or is invalid.");
+            AnsiConsole.MarkupLine("[red]Cannot move vehicle — target spot is invalid or full.[/]");
             Pause();
             return;
         }
 
-        // Remove from old spot and autosave
-        garage.Spots[fromIndex].Remove(plate);
-        Console.WriteLine($"Moved {plate} to spot {targetSpot}.");
-        GarageStorage.Save(garage); // autosave on change
+        garage.Spots[originalSpotIndex].Remove(registrationNumber);
+        AnsiConsole.MarkupLine($"[green]Moved {registrationNumber} to spot {targetSpot}.[/]");
+        GarageStorage.Save(garage);
         Pause();
     }
-    static void Pause()
+    static void ShowAllSpots(Garage garage)
     {
-        Console.WriteLine("\nPress any key to continue...");
-        Console.ReadKey(true);
+        var table = new Table().Centered();
+        table.AddColumn("[bold]Spot[/]");
+        table.AddColumn("[bold]Vehicles[/]");
+
+        foreach (var spot in garage.Spots)
+        {
+            string info = "";
+            foreach (var vehicle in spot.Vehicles)
+                info += $"{vehicle.VehicleType} {vehicle.RegistrationNumber}  ";
+
+            table.AddRow($"[yellow]{spot.Number}[/]", string.IsNullOrWhiteSpace(info) ? "[grey](empty)[/]" : info.Trim());
+        }
+
+        AnsiConsole.Write(table);
     }
 }
