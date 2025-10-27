@@ -58,3 +58,16 @@ Reasoning / Learning:
 - Improved understanding of method reusability (Garage.TryParkOnSpot used by MoveVehicle).
 - Gained experience applying encapsulation and clean object interactions.
 ------------------------------------------------------------------------------
+## 24-10-2025  
+
+Work done:
+- Replaced all Console.WriteLine and Console.ReadLine interactions with **Spectre.Console** components.  
+- Upgraded Program.cs to use interactive menus, prompts, tables, and panels for a more modern and readable UI.  
+- Simplified user interaction by using SelectionPrompt, TextPrompt, and helper methods for input.  
+- Tested all features (parking, removing, moving, checkout, and save/load) through the new Spectre.Console interface.
+  
+Reasoning / Learning:
+- Learned how to use the Spectre.Console library to create rich and interactive console applications.  
+- Understood how to separate business logic (Garage, Vehicle, etc.) from the user interface layer.  
+- Realized that a clear and structured UI improves usability and user experience without changing the core logic.  
+- Gained experience in integrating external libraries while keeping the program simple and maintainable.  
