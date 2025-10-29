@@ -8,8 +8,8 @@ class Program
     static void Main()
     {
         // Load configuration and garage (spots + any previously saved vehicles)
-        var configuration = ConfigService.Load();
-        PriceListService.LoadInto(configuration); // Load prices from prices.txt
+        var configuration = ConfigService.LoadAll();
+      
         var garage = GarageStorage.Load(configuration.SpotCount, configuration.SpotCapacity);
 
         while (true) // main loop
