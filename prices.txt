@@ -1,0 +1,5 @@
+﻿# Prague Parking price list (CZK per started hour)
+Car=20
+Motorcycle=10
+# Round minutes up to the next hour after this grace period
+FreeMinutes=10

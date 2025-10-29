@@ -9,6 +9,7 @@ class Program
     {
         // Load configuration and garage (spots + any previously saved vehicles)
         var configuration = ConfigService.Load();
+        PriceListService.LoadInto(configuration); // Load prices from prices.txt
         var garage = GarageStorage.Load(configuration.SpotCount, configuration.SpotCapacity);
 
         while (true) // main loop
@@ -50,13 +51,13 @@ class Program
                     ? ValidationResult.Error("[red]Enter a valid registration number[/]")
                     : ValidationResult.Success()));
    
-    static string AskForType()
+    static string AskForType() 
         => AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("Choose vehicle type:")
                 .AddChoices("car", "mc"));
 
-    static int AskForSpotNumber()
+    static int AskForSpotNumber() 
         => AnsiConsole.Prompt(
             new TextPrompt<int>("Enter target spot number:")
                 .PromptStyle("cyan")
@@ -65,7 +66,7 @@ class Program
                         ? ValidationResult.Error("[red]Spot number must be greater than 0[/]")
                         : ValidationResult.Success()));
 
-    static void Pause()
+    static void Pause() 
     {
         AnsiConsole.Prompt(new TextPrompt<string>("[grey]Press ENTER to continue[/]").AllowEmpty());
     }
@@ -104,7 +105,7 @@ class Program
         }
         Pause();
     }
-    static void CheckoutVehicle(Garage garage, AppConfiguration configuration)
+    static void CheckoutVehicle(Garage garage, AppConfiguration configuration) 
     {
         string registrationNumber = AskForPlate("Enter registration number to checkout:").Trim().ToUpperInvariant();
 

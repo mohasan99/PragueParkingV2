@@ -12,4 +12,10 @@
     <PackageReference Include="Spectre.Console" Version="0.52.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="prices.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

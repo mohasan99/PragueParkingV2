@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
+VisualStudioVersion = 17.14.36429.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PragueParkingV2", "PragueParkingV2.csproj", "{6038DBF7-A7AB-4B1E-9D20-9531990B65AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PraqueParkingV2.Tests", "..\PraqueParkingV2.Tests\PraqueParkingV2.Tests.csproj", "{35B4A1D1-18DC-4CD2-8328-6EA3CA9EADAB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{6038DBF7-A7AB-4B1E-9D20-9531990B65AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6038DBF7-A7AB-4B1E-9D20-9531990B65AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6038DBF7-A7AB-4B1E-9D20-9531990B65AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35B4A1D1-18DC-4CD2-8328-6EA3CA9EADAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B4A1D1-18DC-4CD2-8328-6EA3CA9EADAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35B4A1D1-18DC-4CD2-8328-6EA3CA9EADAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35B4A1D1-18DC-4CD2-8328-6EA3CA9EADAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
