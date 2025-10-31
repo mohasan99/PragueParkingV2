@@ -58,6 +58,7 @@ Reasoning / Learning:
 - Gained experience in integrating external libraries while keeping the program simple and maintainable.
   ---------------------------------------------------------------------------
   ## 29-10-2025
+  
   Work done:
 
 - Implemented PriceListService for handling a human-readable prices.txt file (external price list).
@@ -74,3 +75,20 @@ Reasoning / Learning:
 - Understood how to integrate external data (like price lists) safely into an application.
 - Gained hands-on experience with MSTest and writing simple automated tests.
 - Improved understanding of project structure by separating main code, configuration, and test logic into different projects.
+  -----------------------------------------------------------------------
+## 31-10-2025
+
+Work done:
+
+- Improved main menu using Spectre.Console for a modern, interactive console UI with keyboard navigation.
+- Added a price list panel, showing the hourly rates for cars and motorcycles, and free parking time.
+- Verified that autosave and checkout logic still work correctly after Spectre integration.
+- Simplified UI flow and ensured all major functions (Park, Remove, Move, Checkout) display feedback using Spectre panels and colors.
+
+Reasoning / Learning:
+
+- Learned how to use Spectre.Console for interactive menus, panels, and markup to improve user experience.
+- Understood how method scope affects visibility between functions in the same class.
+- Practiced organizing code into helper methods for better readability and reuse.
+- Gained experience integrating console UI libraries while keeping program logic separate from display logic.
+- Strengthened understanding of C# class and method structure when adding new UI components.
