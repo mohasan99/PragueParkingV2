@@ -9,41 +9,45 @@ public static class GarageStorage
 {
     private const string FileName = "garage.json";
 
-    // Simple flat record for JSON
+    // Flat record for JSON
     private class ParkingRecord
     {
         public int Spot { get; set; }
         public string Type { get; set; } = "";
         public string Plate { get; set; } = "";
+        public DateTimeOffset CheckIn { get; set; }   // saved original check-in
     }
 
-    public static void Save(Garage garage) // saves all parked vehicles with their spot numbers
+    // Save all parked vehicles (including their original check-in)
+    public static void Save(Garage garage)
     {
-        var list = new List<ParkingRecord>(); // flat list for serialization
+        var list = new List<ParkingRecord>();
 
-        foreach (var spot in garage.Spots) 
+        foreach (var spot in garage.Spots)
         {
             foreach (var vehicle in spot.Vehicles)
             {
-                list.Add(new ParkingRecord // create record
+                list.Add(new ParkingRecord
                 {
-                    Spot = spot.Number, 
-                    Type = vehicle.VehicleType,      
-                    Plate = vehicle.RegistrationNumber
+                    Spot = spot.Number,
+                    Type = vehicle.VehicleType,               // "Car" / "Motorcycle"
+                    Plate = vehicle.RegistrationNumber,
+                    CheckIn = vehicle.CheckInTime             // <-- keep original time
                 });
             }
         }
-        // Serialize to JSON and write to file
+
         var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(FileName, json);
         Console.WriteLine("Saved.");
     }
 
-    public static Garage Load(int defaultSpots = 100, double spotCapacity = 1.0) // loads from file or creates new garage
+    // Load vehicles and restore their check-in times
+    public static Garage Load(int defaultSpots = 100, double spotCapacity = 1.0)
     {
-        var garage = new Garage(defaultSpots, spotCapacity);// create new garage
+        var garage = new Garage(defaultSpots, spotCapacity);
 
-        if (!File.Exists(FileName)) 
+        if (!File.Exists(FileName))
         {
             Console.WriteLine("No save file found. Starting fresh.");
             return garage;
@@ -51,13 +55,17 @@ public static class GarageStorage
 
         try
         {
-            var json = File.ReadAllText(FileName); 
-            var list = JsonSerializer.Deserialize<List<ParkingRecord>>(json) ?? new List<ParkingRecord>(); 
-            
+            var json = File.ReadAllText(FileName);
+            var list = JsonSerializer.Deserialize<List<ParkingRecord>>(json) ?? new List<ParkingRecord>();
+
             foreach (var record in list)
             {
-                Vehicle vehicle = record.Type.ToLower() == "car" ? new Car(record.Plate) : new Motorcycle(record.Plate); // recreate vehicle
-                garage.TryParkOnSpot(vehicle, record.Spot); // place back on its original spot if it fits
+                // Recreate with the saved check-in time
+                Vehicle vehicle = record.Type.Equals("car", StringComparison.OrdinalIgnoreCase)
+                    ? new Car(record.Plate, record.CheckIn)             // <-- pass CheckIn
+                    : new Motorcycle(record.Plate, record.CheckIn);     // <-- pass CheckIn
+
+                garage.TryParkOnSpot(vehicle, record.Spot);             // put back to original spot if it fits
             }
 
             Console.WriteLine("Loaded previous state.");

@@ -17,7 +17,7 @@ public abstract class Vehicle
 
     public string RegistrationNumber { get; } // Normalized registration number
     public double SizeUnits { get; } // Size of the vehicle in size units
-    public DateTimeOffset CheckInTime { get; } // Time of vehicle check-in
+    public DateTimeOffset CheckInTime { get; protected set; } // Time of vehicle check-in
     public abstract string VehicleType { get; } // Abstract property for vehicle type
 
     public override string ToString() => $"{VehicleType} {RegistrationNumber}"; // String representation of the vehicle

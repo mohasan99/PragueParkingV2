@@ -1,4 +1,8 @@
-﻿namespace PragueParkingV2;
+﻿using Spectre.Console;
+using Spectre.Console.Rendering;
+using System.Linq;
+
+namespace PragueParkingV2;
 
 public class Garage
 {
@@ -25,9 +29,9 @@ public class Garage
 
     public bool TryPark(Vehicle vehicle) // Try to park a vehicle in any available spot
     {
-        foreach (var spot in spots) 
+        foreach (var spot in spots)
         {
-            if (spot.TryPark(vehicle)) 
+            if (spot.TryPark(vehicle))
                 return true;
         }
         return false;
@@ -43,11 +47,58 @@ public class Garage
         return false;
     }
 
-    public void ShowAllSpots() // Display the status of all parking spots
+    public void ShowGarageMap(int columns = 10) // Display the garage map in a table format
     {
-        foreach (var spot in spots)
+        AnsiConsole.Clear();
+
+        var table = new Table()
+            .Title("[white]Karta över P-huset[/]")
+            .Border(TableBorder.Rounded)
+            .Expand();
+
+        for (int c = 1; c <= columns; c++)
+            table.AddColumn(new TableColumn($"[grey]{c}[/]"));
+
+        int rows = (int)Math.Ceiling(spots.Length / (double)columns);
+
+        for (int r = 0; r < rows; r++)
         {
-            Console.WriteLine(spot.ToString());
+            var row = new List<IRenderable>(columns);
+
+            for (int c = 0; c < columns; c++)
+            {
+                int i = r * columns + c;
+                if (i >= spots.Length) { row.Add(new Markup(" ")); continue; }
+
+                var first = spots[i].Vehicles.FirstOrDefault();
+                string number = $"{i + 1:000}";
+
+                if (first is null)
+                {
+
+                    string label = Markup.Escape("[ ]");
+                    row.Add(new Markup($"[green]{number}[/]\n[green]{label}[/]"));
+                }
+                else
+                {
+
+                    var plate = first.RegistrationNumber?.Trim() ?? "?";
+
+                    if (plate.Length > 10) plate = plate[..10];
+
+                    string label = $"[{plate}{(spots[i].Vehicles.Count() > 1 ? $" +{spots[i].Vehicles.Count() - 1}" : "")}]";
+                    label = Markup.Escape(label);
+
+                    row.Add(new Markup($"[red]{number}[/]\n[red]{label}[/]"));
+                }
+            }
+
+            table.AddRow(row);
         }
+
+        AnsiConsole.Write(table);
+        AnsiConsole.MarkupLine(
+     "\n[grey]Legend:[/] [green]NNN[/]=empty, [red]NNN[/]=occupied, second line shows [[PLATE]] (and +n if multiple).");
+
     }
 }

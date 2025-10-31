@@ -7,19 +7,21 @@ class Program
 {
     static void Main()
     {
-        // Load configuration and garage (spots + any previously saved vehicles)
         var configuration = ConfigService.LoadAll();
-      
         var garage = GarageStorage.Load(configuration.SpotCount, configuration.SpotCapacity);
 
-        while (true) // main loop
+        while (true)
         {
             AnsiConsole.Clear();
-            AnsiConsole.Write(new Rule("[yellow]PRAGUE PARKING 2.0[/]").Centered());
+            AnsiConsole.Write(new Rule("[yellow]PRAGUE PARKING 2.0[/]").Centered().RuleStyle("grey"));
+
+            // Show the price list panel
+            ShowPriceList(configuration);
 
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("[bold]Choose an option[/]:")
+                    .Title("[bold]Välj ett alternativ:[/]")
+                    .PageSize(10)
                     .AddChoices(
                         "1) Park vehicle",
                         "2) Remove vehicle",
@@ -29,36 +31,36 @@ class Program
                         "6) Save & Exit"
                     ));
 
-            switch (choice[..1]) // read only the first number
+            // Route by choice
+            if (choice.StartsWith("1")) ParkVehicle(garage);
+            else if (choice.StartsWith("2")) RemoveVehicle(garage);
+            else if (choice.StartsWith("3")) { garage.ShowGarageMap(10); Pause(); }
+            else if (choice.StartsWith("4")) { CheckoutVehicle(garage, configuration); }
+            else if (choice.StartsWith("5")) { MoveVehicle(garage); }
+            else if (choice.StartsWith("6"))
             {
-                case "1": ParkVehicle(garage); break;
-                case "2": RemoveVehicle(garage); break;
-                case "3": ShowAllSpots(garage); Pause(); break;
-                case "4": CheckoutVehicle(garage, configuration); break;
-                case "5": MoveVehicle(garage); break;
-                case "6":
-                    AnsiConsole.Status().Start("Saving...", _ => GarageStorage.Save(garage));
-                    return;
+                GarageStorage.Save(garage);
+                return;
             }
         }
     }
-    
-    static string AskForPlate(string question) 
-        => AnsiConsole.Prompt(new TextPrompt<string>(question)
+
+    static string AskForPlate(string question) =>
+        AnsiConsole.Prompt(new TextPrompt<string>(question)
             .PromptStyle("cyan")
             .Validate(input =>
                 string.IsNullOrWhiteSpace(input)
                     ? ValidationResult.Error("[red]Enter a valid registration number[/]")
                     : ValidationResult.Success()));
-   
-    static string AskForType() 
-        => AnsiConsole.Prompt(
+
+    static string AskForType() =>
+        AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("Choose vehicle type:")
                 .AddChoices("car", "mc"));
 
-    static int AskForSpotNumber() 
-        => AnsiConsole.Prompt(
+    static int AskForSpotNumber() =>
+        AnsiConsole.Prompt(
             new TextPrompt<int>("Enter target spot number:")
                 .PromptStyle("cyan")
                 .Validate(number =>
@@ -66,10 +68,11 @@ class Program
                         ? ValidationResult.Error("[red]Spot number must be greater than 0[/]")
                         : ValidationResult.Success()));
 
-    static void Pause() 
+    static void Pause()
     {
         AnsiConsole.Prompt(new TextPrompt<string>("[grey]Press ENTER to continue[/]").AllowEmpty());
     }
+
     static void ParkVehicle(Garage garage)
     {
         string vehicleType = AskForType();
@@ -90,6 +93,7 @@ class Program
         }
         Pause();
     }
+
     static void RemoveVehicle(Garage garage)
     {
         string registrationNumber = AskForPlate("Enter registration number to remove:");
@@ -105,7 +109,8 @@ class Program
         }
         Pause();
     }
-    static void CheckoutVehicle(Garage garage, AppConfiguration configuration) 
+
+    static void CheckoutVehicle(Garage garage, AppConfiguration configuration)
     {
         string registrationNumber = AskForPlate("Enter registration number to checkout:").Trim().ToUpperInvariant();
 
@@ -170,6 +175,7 @@ class Program
 
         Pause();
     }
+
     static void MoveVehicle(Garage garage)
     {
         string registrationNumber = AskForPlate("Enter registration number to move:").Trim().ToUpperInvariant();
@@ -212,6 +218,8 @@ class Program
         GarageStorage.Save(garage);
         Pause();
     }
+
+ 
     static void ShowAllSpots(Garage garage)
     {
         var table = new Table().Centered();
@@ -228,5 +236,20 @@ class Program
         }
 
         AnsiConsole.Write(table);
+    }
+
+    static void ShowPriceList(AppConfiguration configuration)
+    {
+        var priceText =
+            $"[white]Bil:[/] {configuration.PricePerHourCar:0} CZK/timme\n" +
+            $"[white]MC:[/]  {configuration.PricePerHourMotorcycle:0} CZK/timme\n\n" +
+            $"[green]Fri parkering: {configuration.FreeMinutes} minuter[/]";
+
+        var panel = new Panel(priceText)
+            .Header("[orchid1]Parkeringsavgifter[/]")
+            .Border(BoxBorder.Rounded)
+            .Expand();
+
+        AnsiConsole.Write(panel);
     }
 }
